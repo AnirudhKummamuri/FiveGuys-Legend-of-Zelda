@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,6 +25,36 @@ namespace FiveGuysFixed.RoomHandling
 
         public Dictionary<Dir, int> Neighbors;
 
+        private Dictionary<string, Func<int, int, IItem>> ItemMap = new()
+        {
+            { "BluePotion", (x, y) => new BluePotion(GameState.contentLoader.bluePotionTexture, x, y) },
+            { "Bomb",       (x, y) => new Bomb(GameState.contentLoader.bombTexture, x, y) },
+            { "Food",       (x, y) => new Food(GameState.contentLoader.foodTexture, x, y) },
+            { "GreenRupee", (x, y) => new GreenRupee(GameState.contentLoader.rupeeTexture, x, y) },
+            { "RedPotion",  (x, y) => new RedPotion(GameState.contentLoader.redPotionTexture, x, y) },
+            { "RedRupee",   (x, y) => new RedRupee(GameState.contentLoader.rupeeTexture, x, y) }
+        };
+
+        private Dictionary<string, Func<int, int, IBlock>> BlockMap = new()
+        {
+            { "Wall",             (x, y) => new Wall(GameState.contentLoader.blockTexture, x, y) },
+            { "Floor",            (x, y) => new Floor(GameState.contentLoader.blockTexture, x, y) },
+            { "TopDoorOpen",      (x, y) => new TopDoorOpen(GameState.contentLoader.blockTexture, x, y) },
+            { "TopDoorClose",     (x, y) => new TopDoorClose(GameState.contentLoader.blockTexture, x, y) },
+            { "LeftDoorOpen",     (x, y) => new LeftDoorOpen(GameState.contentLoader.blockTexture, x, y) },
+            { "LeftDoorClose",    (x, y) => new LeftDoorClose(GameState.contentLoader.blockTexture, x, y) },
+            { "RightDoorOpen",    (x, y) => new RightDoorOpen(GameState.contentLoader.blockTexture, x, y) },
+            { "RightDoorClose",   (x, y) => new RightDoorClose(GameState.contentLoader.blockTexture, x, y) },
+            { "BottomDoorOpen",   (x, y) => new BottomDoorOpen(GameState.contentLoader.blockTexture, x, y) },
+            { "BottomDoorClose",  (x, y) => new BottomDoorClose(GameState.contentLoader.blockTexture, x, y) },
+            { "ClearBlock",       (x, y) => new ClearBlock(GameState.contentLoader.blockTexture, x, y) },
+            { "BlueBlock",        (x, y) => new BlueBlock(GameState.contentLoader.blockTexture, x, y) },
+            { "GreenBlock",       (x, y) => new GreenBlock(GameState.contentLoader.greenBlockTexture, x, y) },
+            { "TreeBlock",        (x, y) => new TreeBlock(GameState.contentLoader.treeBlockTexture, x, y) },
+            { "WhiteBlock",       (x, y) => new WhiteBlock(GameState.contentLoader.whiteBlockTexture, x, y) },
+            { "YellowBlock",      (x, y) => new YellowBlock(GameState.contentLoader.yellowBlockTexture, x, y) }
+        };
+
 
         public RoomContents()
         {
@@ -33,270 +64,102 @@ namespace FiveGuysFixed.RoomHandling
             Projectiles = new List<IProjectile>();
         }
 
-        public RoomContents(XmlNode roomNode, Dictionary<Dir, int> Neighbors)
+        public RoomContents(XmlNode roomNode, Dictionary<Dir, int> neighbors)
         {
-            this.Neighbors = Neighbors;
+            Neighbors = neighbors;
             Blocks = new List<IBlock>();
             Enemies = new List<IEnemy>();
             Items = new List<IItem>();
             Projectiles = new List<IProjectile>();
-            XmlNodeList itemNodes = roomNode.SelectNodes("Objects/Item");
+
+            LoadItems(roomNode.SelectNodes("Objects/Item"));
+            LoadBlocks(roomNode.SelectNodes("Objects/Block"));
+            LoadEnemies(roomNode.SelectNodes("Objects/Enemy"));
+        }
+
+        private void LoadItems(XmlNodeList itemNodes)
+        {
+
+
             foreach (XmlNode itemNode in itemNodes)
             {
-
                 string type = itemNode.Attributes["type"].Value;
                 int x = int.Parse(itemNode.Attributes["x"].Value);
                 int y = int.Parse(itemNode.Attributes["y"].Value);
 
-                if (type == "BluePotion")
+                if (ItemMap.TryGetValue(type, out var createItem))
                 {
-                    Items.Add(
-                        new BluePotion(GameState.contentLoader.bluePotionTexture, x, y)
-                    );
-                }
-
-                if (type == "Bomb")
-                {
-                    Items.Add(
-                        new Bomb(GameState.contentLoader.bombTexture, x, y)
-                    );
-                }
-
-                if (type == "Food")
-                {
-                    Items.Add(
-                        new Food(GameState.contentLoader.foodTexture, x, y)
-                    );
-                }
-
-                if (type == "GreenRupee")
-                {
-                    Items.Add(
-                        new GreenRupee(GameState.contentLoader.rupeeTexture, x, y)
-                    );
-                }
-
-                if (type == "RedPotion")
-                {
-                    Items.Add(
-                        new RedPotion(GameState.contentLoader.redPotionTexture, x, y)
-                    );
-                }
-
-                if (type == "RedRupee")
-                {
-                    Items.Add(
-                        new RedRupee(GameState.contentLoader.rupeeTexture, x, y)
-                    );
+                    Items.Add(createItem(x, y));
                 }
             }
+        }
 
+        private void LoadBlocks(XmlNodeList blockNodes)
+        {
 
-            // Load Blocks
-            XmlNodeList blockNodes = roomNode.SelectNodes("Objects/Block");
             foreach (XmlNode blockNode in blockNodes)
             {
-
                 string type = blockNode.Attributes["type"].Value;
                 int x = int.Parse(blockNode.Attributes["x"].Value);
                 int y = int.Parse(blockNode.Attributes["y"].Value);
 
-                if (type == "Wall")
+                if (BlockMap.TryGetValue(type, out var createBlock))
                 {
-                    Blocks.Add(
-                        new Wall(GameState.contentLoader.blockTexture, x, y)
-                    );
-                }
-
-                if (type == "Floor")
-                {
-                    Blocks.Add(
-                        new Floor(GameState.contentLoader.blockTexture, x, y)
-                    );
-                }
-
-                if (type == "TopDoorOpen")
-                {
-                    Blocks.Add(
-                        new TopDoorOpen(GameState.contentLoader.blockTexture, x, y)
-                    );
-                }
-
-                if (type == "TopDoorClose")
-                {
-                    Blocks.Add(
-                        new TopDoorClose(GameState.contentLoader.blockTexture, x, y)
-                    );
-                }
-
-                if (type == "LeftDoorOpen")
-                {
-                    Blocks.Add(
-                        new LeftDoorOpen(GameState.contentLoader.blockTexture, x, y)
-                    );
-                }
-
-                if (type == "LeftDoorClose")
-                {
-                    Blocks.Add(
-                        new LeftDoorClose(GameState.contentLoader.blockTexture, x, y)
-                    );
-                }
-
-                if (type == "RightDoorOpen")
-                {
-                    Blocks.Add(
-                        new RightDoorOpen(GameState.contentLoader.blockTexture, x, y)
-                    );
-                }
-
-                if (type == "RightDoorClose")
-                {
-                    Blocks.Add(
-                        new RightDoorClose(GameState.contentLoader.blockTexture, x, y)
-                    );
-                }
-
-                if (type == "BottomDoorOpen")
-                {
-                    Blocks.Add(
-                        new BottomDoorOpen(GameState.contentLoader.blockTexture, x, y)
-                    );
-                }
-
-                if (type == "BottomDoorClose")
-                {
-                    Blocks.Add(
-                        new BottomDoorClose(GameState.contentLoader.blockTexture, x, y)
-                    );
-                }
-
-                if (type == "ClearBlock")
-                {
-                    Blocks.Add(
-                        new ClearBlock(GameState.contentLoader.blockTexture, x, y)
-                    );
-                }
-
-                if (type == "BlueBlock")
-                {
-                    Blocks.Add(
-                        new BlueBlock(GameState.contentLoader.blockTexture, x, y)
-                    );
-                }
-
-                if (type == "GreenBlock")
-                {
-                    Blocks.Add(
-                        new GreenBlock(GameState.contentLoader.greenBlockTexture, x, y)
-                    );
-                }
-
-                if (type == "TreeBlock")
-                {
-                    Blocks.Add(
-                        new TreeBlock(GameState.contentLoader.treeBlockTexture, x, y)
-                    );
-                }
-
-                if (type == "WhiteBlock")
-                {
-                    Blocks.Add(
-                        new WhiteBlock(GameState.contentLoader.whiteBlockTexture, x, y)
-                    );
-                }
-
-                if (type == "YellowBlock")
-                {
-                    Blocks.Add(
-                        new YellowBlock(GameState.contentLoader.yellowBlockTexture, x, y)
-                    );
+                    Blocks.Add(createBlock(x, y));
                 }
             }
+        }
 
-            // Load Enemies
-            XmlNodeList enemyNodes = roomNode.SelectNodes("Objects/Enemy");
+        private void LoadEnemies(XmlNodeList enemyNodes)
+        {
             foreach (XmlNode enemyNode in enemyNodes)
             {
                 string type = enemyNode.Attributes["type"].Value;
                 int x = int.Parse(enemyNode.Attributes["x"].Value);
                 int y = int.Parse(enemyNode.Attributes["y"].Value);
+                var position = new Vector2(x, y);
 
-                if (type == "Aquamentus")
+                switch (type)
                 {
-                    Enemies.Add(new Aquamentus(
-                        new Vector2(x, y),
-                        new EnemySprite(GameState.contentLoader.BossTexture, 0, 0, 32, 32, 2),
-                        new EnemySprite(GameState.contentLoader.BossTexture, 32, 0, 32, 32, 2),
-                        Projectiles  // Give access to the projectile list
-                    ));
-                }
-                if (type == "Gel")
-                {
-                    Enemies.Add(
-                        new Gel(
-                            new Vector2(x, y),
-                            GameState.contentLoader.enemyTexture // Pass texture directly
-                        )
-                    );
-                }
+                    case "Aquamentus":
+                        Enemies.Add(new Aquamentus(
+                            position,
+                            new EnemySprite(GameState.contentLoader.BossTexture, 0, 0, 32, 32, 2),
+                            new EnemySprite(GameState.contentLoader.BossTexture, 32, 0, 32, 32, 2),
+                            Projectiles
+                        ));
+                        break;
 
+                    case "Gel":
+                        Enemies.Add(new Gel(position, GameState.contentLoader.enemyTexture));
+                        break;
 
-                if (type == "Goriya")
-                {
-                    Enemies.Add(
-                        new Goriya(
-                            new Vector2(x, y),
+                    case "Goriya":
+                        Enemies.Add(new Goriya(position,
                             GameState.contentLoader.enemyTexture,
-                            GameState.contentLoader.weaponTexture, // Use the weapons texture
-                            Projectiles // Share the room's projectile list
-                        )
-                    );
-                }
-                if (type == "Keese")
-                {
-                    Enemies.Add(
-                        new Keese(
-                            new Vector2(x, y),
-                            GameState.contentLoader.enemyTexture // Uses the enemy sprite sheet
-                        )
-                    );
-                }
-                if (type == "Moblin")
-                {
-                    Enemies.Add(
-                        new Moblin(
-                            new Vector2(x, y),
-                            GameState.contentLoader.enemyTexture // Uses the enemy sprite sheet
-                        )
-                    );
-                }
-                if (type == "Octorok")
-                {
-                    Enemies.Add(
-                        new Octorok(
-                            new Vector2(x, y),
-                            GameState.contentLoader.enemyTexture // Uses the enemy sprite sheet
-                        )
-                    );
-                }
-                if (type == "Stalfos")
-                {
-                    Enemies.Add(
-                        new Stalfos(
-                            new Vector2(x, y),
-                            GameState.contentLoader.enemyTexture // Uses the enemy sprite sheet
-                        )
-                    );
-                }
-                if (type == "Tektike")
-                {
-                    Enemies.Add(
-                        new Tektike(
-                            new Vector2(x, y),
-                            GameState.contentLoader.enemyTexture // Uses the enemy sprite sheet
-                        )
-                    );
+                            GameState.contentLoader.weaponTexture,
+                            Projectiles));
+                        break;
+
+                    case "Keese":
+                        Enemies.Add(new Keese(position, GameState.contentLoader.enemyTexture));
+                        break;
+
+                    case "Moblin":
+                        Enemies.Add(new Moblin(position, GameState.contentLoader.enemyTexture));
+                        break;
+
+                    case "Octorok":
+                        Enemies.Add(new Octorok(position, GameState.contentLoader.enemyTexture));
+                        break;
+
+                    case "Stalfos":
+                        Enemies.Add(new Stalfos(position, GameState.contentLoader.enemyTexture));
+                        break;
+
+                    case "Tektike":
+                        Enemies.Add(new Tektike(position, GameState.contentLoader.enemyTexture));
+                        break;
                 }
             }
         }
