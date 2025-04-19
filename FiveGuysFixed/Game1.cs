@@ -96,7 +96,6 @@ namespace FiveGuysFixed
             GameState.WindowHeight = 880;
             GameState.PlayerState = new PlayerState(new Vector2(GameState.WindowWidth / 2, GameState.WindowHeight / 2));
             GameState.roomManager = new RoomManager();
-            GameState.currentRoomContents = new CurrentRoomContents();
             GameState.contentLoader = new ContentLoader();
             GameState.currentRoomID = 1;
             GameState.Player = new Player(this);
@@ -242,13 +241,13 @@ namespace FiveGuysFixed
         // updates projectiles in the current room and removes finished ones
         private void UpdateProjectiles(GameTime gameTime)
         {
-            for (int i = 0; i < GameState.currentRoomContents.Projectiles.Count; i++)
+            for (int i = 0; i < GameState.roomManager.getCurrentRoom().Projectiles.Count; i++)
             {
-                GameState.currentRoomContents.Projectiles[i].Update(gameTime);
+                GameState.roomManager.getCurrentRoom().Projectiles[i].Update(gameTime);
 
-                if (GameState.currentRoomContents.Projectiles[i].IsFinished())
+                if (GameState.roomManager.getCurrentRoom().Projectiles[i].IsFinished())
                 {
-                    GameState.currentRoomContents.Projectiles.RemoveAt(i);
+                    GameState.roomManager.getCurrentRoom().Projectiles.RemoveAt(i);
                     i--;
                 }
             }
@@ -284,7 +283,7 @@ namespace FiveGuysFixed
             GameState.HUD.Draw(spriteBatch);
 
 
-            foreach (var projectile in GameState.currentRoomContents.Projectiles)
+            foreach (var projectile in GameState.roomManager.getCurrentRoom().Projectiles)
             {
                 projectile.Draw(spriteBatch);
             }
